@@ -5,6 +5,7 @@
 #include <list>
 #include <unordered_map> 
 #include <algorithm>
+#include <mutex>
 #include "DoublyLinkedList.hpp"
 
 /**
@@ -28,6 +29,7 @@ class LRUCache {
 private:
     using TemplateNode = ListNode<KeyType, ValueType>;
     const size_t capacity;
+    std::mutex accessMutex;
 
     /**
      * Linked list, with each ListNode containing a pointer to the cached object, along with its ID.
@@ -47,7 +49,9 @@ public:
     LRUCache(size_t capacity) : capacity(capacity) {}
 
     inline ValueType* retrieve(KeyType key, bool& existsInCache) {
+        std::lock_guard<std::mutex> lock(accessMutex);
         auto it = pointerToNode.find(key);
+
         if (it == pointerToNode.end()) {
             existsInCache = false;
             return nullptr;
@@ -59,6 +63,7 @@ public:
     }
 
     inline void insert(KeyType key, ValueType* value) {
+        std::lock_guard<std::mutex> lock(accessMutex);
         if (cachedItems.len() == capacity) {
             evict();
         }
